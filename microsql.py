@@ -57,14 +57,14 @@ except:
 
 # Insert sample data if empty
 if len(db.execute("SELECT * FROM users")) == 0:
-    db.insert_row('users', {'id': 1, 'username': 'alice', 'email': 'alice@example.com', 'age': 25, 'is_active': True, 'created_at': '2024-01-01 10:00:00'})
-    db.insert_row('users', {'id': 2, 'username': 'bob', 'email': 'bob@example.com', 'age': 30, 'is_active': True, 'created_at': '2024-01-02 11:00:00'})
-    db.insert_row('users', {'id': 3, 'username': 'charlie', 'email': 'charlie@example.com', 'age': 22, 'is_active': False, 'created_at': '2024-01-03 12:00:00'})
+    db.insert_row('users', {'id': '001', 'username': 'alice', 'email': 'alice@example.com', 'age': 25, 'is_active': True, 'created_at': '2024-01-01 10:00:00'})
+    db.insert_row('users', {'id': '002', 'username': 'bob', 'email': 'bob@example.com', 'age': 30, 'is_active': True, 'created_at': '2024-01-02 11:00:00'})
+    db.insert_row('users', {'id': '003', 'username': 'charlie', 'email': 'charlie@example.com', 'age': 22, 'is_active': False, 'created_at': '2024-01-03 12:00:00'})
 
 if len(db.execute("SELECT * FROM posts")) == 0:
-    db.insert_row('posts', {'id': 1, 'user_id': 1, 'title': 'First Post', 'content': 'Hello World!', 'created_at': '2024-01-04 09:00:00'})
-    db.insert_row('posts', {'id': 2, 'user_id': 2, 'title': 'Second Post', 'content': 'Another day in paradise', 'created_at': '2024-01-05 10:00:00'})
-    db.insert_row('posts', {'id': 3, 'user_id': 1, 'title': 'Third Post', 'content': 'Learning MicroSQL', 'created_at': '2024-01-06 11:00:00'})
+    db.insert_row('posts', {'id': '001', 'user_id': '001', 'title': 'First Post', 'content': 'Hello World!', 'created_at': '2024-01-04 09:00:00'})
+    db.insert_row('posts', {'id': '002', 'user_id': '002', 'title': 'Second Post', 'content': 'Another day in paradise', 'created_at': '2024-01-05 10:00:00'})
+    db.insert_row('posts', {'id': '003', 'user_id': '001', 'title': 'Third Post', 'content': 'Learning MicroSQL', 'created_at': '2024-01-06 11:00:00'})
 
 @app.route('/')
 def index():
@@ -99,7 +99,8 @@ def create_user():
             
             # Find next available ID
             users = db.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
-            next_id = users[0]['id'] + 1 if users else 1
+            next_id_num = int(users[0]['id']) + 1 if users else 1
+            next_id = f"{next_id_num:03d}"  # Format as zero-padded 3-digit (001, 002, etc.)
             
             # Parse age as integer or None
             age = int(age_input) if age_input else None
@@ -136,15 +137,22 @@ def edit_user(user_id):
             # Parse age as integer or None
             age = int(age_input) if age_input else None
             
-            # Escape single quotes for SQL
-            escaped_username = username.replace("'", "''")
-            escaped_email = email.replace("'", "''")
-            age_clause = f"age = {age}" if age is not None else "age = NULL"
-            active_val = 'TRUE' if is_active else 'FALSE'
+            # Build data dictionary with proper types
+            user_data = {
+                'username': username,
+                'email': email,
+                'age': age,
+                'is_active': is_active
+            }
             
-            # Build UPDATE SQL with proper escaping
-            sql = f"UPDATE users SET username = '{escaped_username}', email = '{escaped_email}', {age_clause}, is_active = {active_val} WHERE id = {user_id}"
-            db.execute(sql)
+            # Update using direct method to avoid SQL concatenation issues
+            users = db.execute(f"SELECT * FROM users WHERE id = {user_id}")
+            if users:
+                updated_user = users[0].copy()
+                updated_user.update(user_data)
+                # Remove old row and insert updated version
+                db.execute(f"DELETE FROM users WHERE id = {user_id}")
+                db.insert_row('users', updated_user)
             
             return redirect('/')
         except Exception as e:
