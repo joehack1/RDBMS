@@ -124,15 +124,8 @@ class MicroSQL:
             current += char
         values.append(current.strip())
         
-        # Clean up values
-        cleaned_values = []
-        for val in values:
-            val = val.strip()
-            if val.startswith("'") and val.endswith("'"):
-                val = val[1:-1]
-            cleaned_values.append(val)
-        
-        return table_name, columns, cleaned_values
+        # Keep values as strings for now - don't convert to int
+        return table_name, columns, values
     
     def _insert(self, sql: str) -> List:
         """Insert a row into table"""
@@ -143,31 +136,46 @@ class MicroSQL:
         
         schema = self.schemas[table_name]
         
-        # Create row
+        # Create row with proper type conversion
         if columns:
-            row = {col: val for col, val in zip(columns, values)}
+            row = {}
+            for col, val in zip(columns, values):
+                row[col] = self._convert_value(val, col, schema)
         else:
-            row = {col: val for col, val in zip(schema.keys(), values)}
-        
-        # Type conversion
-        for key, val in row.items():
-            if val.upper() == 'NULL':
-                row[key] = None
-            elif val.upper() == 'TRUE':
-                row[key] = True
-            elif val.upper() == 'FALSE':
-                row[key] = False
-            elif key in schema:
-                if 'INT' in schema[key].upper():
-                    try:
-                        row[key] = int(val)
-                    except:
-                        pass
+            row = {}
+            for col, val in zip(schema.keys(), values):
+                row[col] = self._convert_value(val, col, schema)
         
         self.tables[table_name].append(row)
         self.save_to_file()
         
         return []
+    
+    def _convert_value(self, val: str, col_name: str, schema: dict):
+        """Convert value to appropriate type based on schema"""
+        if isinstance(val, str):
+            val = val.strip()
+            # Check for NULL
+            if val.upper() == 'NULL':
+                return None
+            # Check for BOOLEAN
+            elif val.upper() == 'TRUE':
+                return True
+            elif val.upper() == 'FALSE':
+                return False
+            # Check schema type
+            elif col_name in schema:
+                col_type = schema[col_name].upper()
+                if 'INT' in col_type:
+                    try:
+                        return int(val)
+                    except:
+                        return val
+            # Return as string
+            return val
+        else:
+            # Already converted (should not happen with current logic)
+            return val
     
     def _select(self, sql: str) -> List[Dict]:
         """Select rows from table"""

@@ -103,10 +103,14 @@ def create_user():
             users = db.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
             next_id = users[0]['id'] + 1 if users else 1
             
+            # Build SQL with proper type conversion
+            age_val = age if age else 'NULL'
+            active_val = 'TRUE' if is_active else 'FALSE'
+            
             # Insert user
             db.execute(f"""
                 INSERT INTO users (id, username, email, age, is_active, created_at) 
-                VALUES ({next_id}, '{username}', '{email}', {age if age else 'NULL'}, {is_active}, '2024-01-10 10:00:00')
+                VALUES ({next_id}, '{username}', '{email}', {age_val}, {active_val}, '2024-01-10 10:00:00')
             """)
             
             return redirect('/')
@@ -125,9 +129,13 @@ def edit_user(user_id):
             age = int(request.form['age']) if request.form['age'] else None
             is_active = 'is_active' in request.form
             
+            # Build SQL with proper type conversion
+            age_val = age if age else 'NULL'
+            active_val = 'TRUE' if is_active else 'FALSE'
+            
             db.execute(f"""
                 UPDATE users 
-                SET username = '{username}', email = '{email}', age = {age if age else 'NULL'}, is_active = {is_active}
+                SET username = '{username}', email = '{email}', age = {age_val}, is_active = {active_val}
                 WHERE id = {user_id}
             """)
             

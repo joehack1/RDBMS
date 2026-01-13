@@ -5,8 +5,8 @@
         "id": "2",
         "username": "bob",
         "email": "bob@example.com",
-        "age": 30,
-        "is_active": true,
+        "age": "303",
+        "is_active": "TRUE",
         "created_at": "2024-01-02 11:00:00"
       },
       {
