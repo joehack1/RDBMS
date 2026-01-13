@@ -57,16 +57,14 @@ except:
 
 # Insert sample data if empty
 if len(db.execute("SELECT * FROM users")) == 0:
-    from datetime import datetime
-    db.execute("INSERT INTO users (id, username, email, age, is_active, created_at) VALUES (1, 'alice', 'alice@example.com', 25, TRUE, '2024-01-01 10:00:00')")
-    db.execute("INSERT INTO users (id, username, email, age, is_active, created_at) VALUES (2, 'bob', 'bob@example.com', 30, TRUE, '2024-01-02 11:00:00')")
-    db.execute("INSERT INTO users (id, username, email, age, is_active, created_at) VALUES (3, 'charlie', 'charlie@example.com', 22, FALSE, '2024-01-03 12:00:00')")
+    db.insert_row('users', {'id': 1, 'username': 'alice', 'email': 'alice@example.com', 'age': 25, 'is_active': True, 'created_at': '2024-01-01 10:00:00'})
+    db.insert_row('users', {'id': 2, 'username': 'bob', 'email': 'bob@example.com', 'age': 30, 'is_active': True, 'created_at': '2024-01-02 11:00:00'})
+    db.insert_row('users', {'id': 3, 'username': 'charlie', 'email': 'charlie@example.com', 'age': 22, 'is_active': False, 'created_at': '2024-01-03 12:00:00'})
 
 if len(db.execute("SELECT * FROM posts")) == 0:
-    from datetime import datetime
-    db.execute("INSERT INTO posts (id, user_id, title, content, created_at) VALUES (1, 1, 'First Post', 'Hello World!', '2024-01-04 09:00:00')")
-    db.execute("INSERT INTO posts (id, user_id, title, content, created_at) VALUES (2, 2, 'Second Post', 'Another day in paradise', '2024-01-05 10:00:00')")
-    db.execute("INSERT INTO posts (id, user_id, title, content, created_at) VALUES (3, 1, 'Third Post', 'Learning MicroSQL', '2024-01-06 11:00:00')")
+    db.insert_row('posts', {'id': 1, 'user_id': 1, 'title': 'First Post', 'content': 'Hello World!', 'created_at': '2024-01-04 09:00:00'})
+    db.insert_row('posts', {'id': 2, 'user_id': 2, 'title': 'Second Post', 'content': 'Another day in paradise', 'created_at': '2024-01-05 10:00:00'})
+    db.insert_row('posts', {'id': 3, 'user_id': 1, 'title': 'Third Post', 'content': 'Learning MicroSQL', 'created_at': '2024-01-06 11:00:00'})
 
 @app.route('/')
 def index():

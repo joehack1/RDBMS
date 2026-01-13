@@ -88,18 +88,20 @@ class MicroSQL:
         primary_key = self.primary_keys.get(table_name)
         if primary_key and primary_key in row:
             pk_value = row[primary_key]
+            pk_value_str = str(pk_value) if pk_value is not None else "NULL"
             for existing_row in self.tables[table_name]:
                 if existing_row.get(primary_key) == pk_value:
-                    raise ValueError(f"PRIMARY KEY constraint violated: {primary_key}={pk_value} already exists")
+                    raise ValueError(f"PRIMARY KEY constraint violated: {primary_key}={pk_value_str} already exists")
         
         # Validate UNIQUE constraints
         unique_cols = self.unique_columns.get(table_name, [])
         for col in unique_cols:
             if col in row:
                 unique_value = row[col]
+                unique_value_str = str(unique_value) if unique_value is not None else "NULL"
                 for existing_row in self.tables[table_name]:
                     if existing_row.get(col) == unique_value:
-                        raise ValueError(f"UNIQUE constraint violated: {col}={unique_value} already exists")
+                        raise ValueError(f"UNIQUE constraint violated: {col}={unique_value_str} already exists")
         
         self.tables[table_name].append(row)
         
