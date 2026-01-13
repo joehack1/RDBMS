@@ -181,9 +181,14 @@ def list_posts():
     users = db.execute("SELECT * FROM users")
     
     # Manual join (since MicroSQL doesn't have automatic JOIN yet)
-    user_dict = {user['id']: user for user in users}
+    user_dict = {}
+    for user in users:
+        user_id = user.get('id') or user.get('user_id')
+        if user_id:
+            user_dict[user_id] = user
+    
     for post in posts:
-        post['author'] = user_dict.get(post['user_id'], {'username': 'Unknown'})
+        post['author'] = user_dict.get(post.get('user_id'), {'username': 'Unknown'})
     
     return render_template('posts.html', posts=posts)
 
