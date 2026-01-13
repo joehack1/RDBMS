@@ -8,7 +8,7 @@ import json
 app = Flask(__name__)
 
 # Initialize MicroSQL database
-from microsql import MicroSQL
+from database import MicroSQL
 
 # Create database and sample tables
 db = MicroSQL("webapp")
@@ -352,4 +352,3 @@ if __name__ == '__main__':
     
     # Start Flask app
     app.run(debug=True, port=5000)
-    
