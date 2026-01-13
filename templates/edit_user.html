@@ -3,34 +3,71 @@
 <head>
     <title>Edit User</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        form { max-width: 400px; }
-        label { display: block; margin-top: 10px; }
-        input[type="text"], input[type="email"], input[type="number"] {
-            width: 100%; padding: 8px; margin: 5px 0;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background-image: url('/static/bg.jpg');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .btn { padding: 10px 15px; margin-top: 10px; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: -1;
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+        }
+        h1 { color: #fff; margin-bottom: 20px; text-align: center; }
+        form { max-width: 100%; background-color: white; padding: 30px; border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        label { display: block; margin-top: 15px; color: #444; font-weight: bold; }
+        input[type="text"], input[type="email"], input[type="number"] {
+            width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #bbb; border-radius: 3px; box-sizing: border-box;
+        }
+        input[type="checkbox"] { margin-right: 5px; }
+        .btn { padding: 10px 15px; margin-top: 15px; border: none; border-radius: 4px; cursor: pointer; width: 48%; margin-right: 2%; }
+        .btn-primary { background-color: #707070; color: white; }
+        .btn-cancel { background-color: #505050; color: white; }
+        .btn:hover { opacity: 0.85; }
     </style>
 </head>
 <body>
-    <h1>Edit User</h1>
-    <form method="POST">
-        <label>Username:</label>
-        <input type="text" name="username" value="{{ user.username }}" required>
-        
-        <label>Email:</label>
-        <input type="email" name="email" value="{{ user.email }}" required>
-        
-        <label>Age:</label>
-        <input type="number" name="age" value="{{ user.age if user.age else '' }}">
-        
-        <label>
-            <input type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %}>
-            Active
-        </label>
-        
-        <button type="submit" class="btn btn-primary">Update User</button>
-        <a href="/" class="btn">Cancel</a>
-    </form>
+    <div class="container">
+        <h1>Edit User</h1>
+        <form method="POST">
+            <label>Username:</label>
+            <input type="text" name="username" value="{{ user.username }}" required>
+            
+            <label>Email:</label>
+            <input type="email" name="email" value="{{ user.email }}" required>
+            
+            <label>Age:</label>
+            <input type="number" name="age" value="{{ user.age if user.age else '' }}">
+            
+            <label>
+                <input type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %}>
+                Active
+            </label>
+            
+            <div>
+                <button type="submit" class="btn btn-primary">Update User</button>
+                <a href="/" class="btn btn-cancel" style="display: inline-block; text-decoration: none; text-align: center;">Cancel</a>
+            </div>
+        </form>
+    </div>
 </body>
 </html>

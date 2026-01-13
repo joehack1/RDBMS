@@ -3,25 +3,55 @@
 <head>
     <title>Posts</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .post { border: 1px solid #ddd; padding: 20px; margin: 20px 0; }
-        .post-title { font-size: 24px; color: #333; }
-        .post-author { color: #666; font-style: italic; }
-        .post-content { margin: 10px 0; }
-        .post-date { color: #999; font-size: 14px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background-image: url('/static/bg.jpg');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: -1;
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            padding: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 { color: #fff; margin-bottom: 20px; }
+        .btn { padding: 8px 12px; text-decoration: none; background-color: #707070; color: white; border-radius: 4px; display: inline-block; margin-bottom: 20px; }
+        .btn:hover { opacity: 0.85; }
+        .post { border: 1px solid #bbb; padding: 20px; margin: 20px 0; background-color: white; border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .post-title { font-size: 24px; color: #333; margin-bottom: 8px; font-weight: bold; }
+        .post-author { color: #666; font-style: italic; font-size: 14px; }
+        .post-content { margin: 10px 0; color: #555; line-height: 1.6; }
+        .post-date { color: #888; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1>Posts</h1>
-    <a href="/" class="btn">Back to Users</a>
-    
-    {% for post in posts %}
-    <div class="post">
-        <div class="post-title">{{ post.title }}</div>
-        <div class="post-author">By {{ post.author.username }}</div>
-        <div class="post-content">{{ post.content }}</div>
-        <div class="post-date">{{ post.created_at }}</div>
+    <div class="container">
+        <h1>Posts</h1>
+        <a href="/" class="btn">Back to Users</a>
+        
+        {% for post in posts %}
+        <div class="post">
+            <div class="post-title">{{ post.title }}</div>
+            <div class="post-author">By {{ post.author.username }}</div>
+            <div class="post-content">{{ post.content }}</div>
+            <div class="post-date">{{ post.created_at }}</div>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </body>
 </html>

@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, jsonify
 import json
 
 # Create Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # Initialize MicroSQL database
 from database import MicroSQL

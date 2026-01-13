@@ -3,34 +3,188 @@
 <head>
     <title>Create User</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        form { max-width: 400px; }
-        label { display: block; margin-top: 10px; }
-        input[type="text"], input[type="email"], input[type="number"] {
-            width: 100%; padding: 8px; margin: 5px 0;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-image: url('/static/bg.jpg');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        .btn { padding: 10px 15px; margin-top: 10px; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(50, 50, 50, 0.6) 100%);
+            z-index: -1;
+        }
+        .navbar {
+            background: rgba(45, 45, 45, 0.95);
+            padding: 15px 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .navbar h1 {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .form-card {
+            width: 100%;
+            max-width: 500px;
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+        }
+        h2 { 
+            color: #333; 
+            margin-bottom: 30px; 
+            text-align: center;
+            font-size: 26px;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px;
+            color: #444; 
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+        }
+        input[type="text"], input[type="email"], input[type="number"] {
+            width: 100%; 
+            padding: 12px 14px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #707070;
+            box-shadow: 0 0 0 3px rgba(112, 112, 112, 0.1);
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+        }
+        input[type="checkbox"] { 
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+        .btn { 
+            flex: 1;
+            padding: 12px;
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #707070 0%, #606060 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(112, 112, 112, 0.3);
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(112, 112, 112, 0.4);
+            background: linear-gradient(135deg, #808080 0%, #707070 100%);
+        }
+        .btn-cancel { 
+            background: linear-gradient(135deg, #bbb 0%, #aaa 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(170, 170, 170, 0.3);
+        }
+        .btn-cancel:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(170, 170, 170, 0.4);
+            background: linear-gradient(135deg, #ccc 0%, #bbb 100%);
+        }
+        @media (max-width: 600px) {
+            .form-card { padding: 25px; }
+            h2 { font-size: 22px; }
+            .button-group { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
-    <h1>Create New User</h1>
-    <form method="POST">
-        <label>Username:</label>
-        <input type="text" name="username" required>
-        
-        <label>Email:</label>
-        <input type="email" name="email" required>
-        
-        <label>Age:</label>
-        <input type="number" name="age">
-        
-        <label>
-            <input type="checkbox" name="is_active" checked>
-            Active
-        </label>
-        
-        <button type="submit" class="btn btn-primary">Create User</button>
-        <a href="/" class="btn">Cancel</a>
-    </form>
+    <div class="navbar">
+        <h1>📊 MicroSQL Database</h1>
+    </div>
+    <div class="container">
+        <div class="form-card">
+            <h2>Create New User</h2>
+            <form method="POST">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required placeholder="Enter username">
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required placeholder="Enter email address">
+                </div>
+                
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" name="age" placeholder="Enter age (optional)">
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="active" name="is_active" checked>
+                        <label for="active">Mark as Active</label>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">✓ Create User</button>
+                    <a href="/" class="btn btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
