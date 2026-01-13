@@ -96,22 +96,28 @@ def create_user():
             # Get form data
             username = request.form['username']
             email = request.form['email']
-            age = int(request.form['age']) if request.form['age'] else None
+            age_input = request.form.get('age', '').strip()
             is_active = 'is_active' in request.form
             
             # Find next available ID
             users = db.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
             next_id = users[0]['id'] + 1 if users else 1
             
-            # Build SQL with proper type conversion
-            age_val = age if age else 'NULL'
-            active_val = 'TRUE' if is_active else 'FALSE'
+            # Parse age as integer or None
+            age = int(age_input) if age_input else None
             
-            # Insert user
-            db.execute(f"""
-                INSERT INTO users (id, username, email, age, is_active, created_at) 
-                VALUES ({next_id}, '{username}', '{email}', {age_val}, {active_val}, '2024-01-10 10:00:00')
-            """)
+            # Build data dictionary with proper types
+            user_data = {
+                'id': next_id,
+                'username': username,
+                'email': email,
+                'age': age,
+                'is_active': is_active,
+                'created_at': '2024-01-10 10:00:00'
+            }
+            
+            # Insert using direct method to avoid SQL concatenation issues
+            db.insert_row('users', user_data)
             
             return redirect('/')
         except Exception as e:
@@ -126,18 +132,21 @@ def edit_user(user_id):
         try:
             username = request.form['username']
             email = request.form['email']
-            age = int(request.form['age']) if request.form['age'] else None
+            age_input = request.form.get('age', '').strip()
             is_active = 'is_active' in request.form
             
-            # Build SQL with proper type conversion
-            age_val = age if age else 'NULL'
+            # Parse age as integer or None
+            age = int(age_input) if age_input else None
+            
+            # Escape single quotes for SQL
+            escaped_username = username.replace("'", "''")
+            escaped_email = email.replace("'", "''")
+            age_clause = f"age = {age}" if age is not None else "age = NULL"
             active_val = 'TRUE' if is_active else 'FALSE'
             
-            db.execute(f"""
-                UPDATE users 
-                SET username = '{username}', email = '{email}', age = {age_val}, is_active = {active_val}
-                WHERE id = {user_id}
-            """)
+            # Build UPDATE SQL with proper escaping
+            sql = f"UPDATE users SET username = '{escaped_username}', email = '{escaped_email}', {age_clause}, is_active = {active_val} WHERE id = {user_id}"
+            db.execute(sql)
             
             return redirect('/')
         except Exception as e:

@@ -3,10 +3,10 @@
     "users": [
       {
         "id": "2",
-        "username": "bob",
+        "username": "boba",
         "email": "bob@example.com",
-        "age": "303",
-        "is_active": "TRUE",
+        "age": 303,
+        "is_active": true,
         "created_at": "2024-01-02 11:00:00"
       },
       {
@@ -14,7 +14,7 @@
         "username": "charlie",
         "email": "charlie@example.com",
         "age": 22,
-        "is_active": false,
+        "is_active": true,
         "created_at": "2024-01-03 12:00:00"
       }
     ],
@@ -63,5 +63,7 @@
       "comment": "TEXT",
       "created_at": "DATETIME"
     }
-  }
+  },
+  "primary_keys": {},
+  "unique_columns": {}
 }

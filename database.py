@@ -43,6 +43,75 @@ class MicroSQL:
                 'unique_columns': self.unique_columns
             }, f, indent=2, default=str)
     
+    def insert_row(self, table_name: str, data: Dict[str, Any]) -> None:
+        """Insert a row directly without SQL parsing - avoids concatenation issues"""
+        if table_name not in self.tables:
+            raise ValueError(f"Table {table_name} does not exist")
+        
+        schema = self.schemas[table_name]
+        
+        # Convert values based on schema
+        row = {}
+        for col, val in data.items():
+            if col in schema:
+                col_type = schema[col].upper()
+                
+                # Handle None/NULL
+                if val is None:
+                    row[col] = None
+                # Handle booleans
+                elif isinstance(val, bool):
+                    row[col] = val
+                # Handle integers
+                elif isinstance(val, int):
+                    row[col] = val
+                # Handle strings
+                elif isinstance(val, str):
+                    val = val.strip()
+                    if val.upper() == 'NULL':
+                        row[col] = None
+                    elif val.upper() == 'TRUE':
+                        row[col] = True
+                    elif val.upper() == 'FALSE':
+                        row[col] = False
+                    elif 'INT' in col_type:
+                        try:
+                            row[col] = int(val)
+                        except:
+                            row[col] = val
+                    else:
+                        row[col] = val
+                else:
+                    row[col] = val
+        
+        # Validate PRIMARY KEY constraint
+        primary_key = self.primary_keys.get(table_name)
+        if primary_key and primary_key in row:
+            pk_value = row[primary_key]
+            for existing_row in self.tables[table_name]:
+                if existing_row.get(primary_key) == pk_value:
+                    raise ValueError(f"PRIMARY KEY constraint violated: {primary_key}={pk_value} already exists")
+        
+        # Validate UNIQUE constraints
+        unique_cols = self.unique_columns.get(table_name, [])
+        for col in unique_cols:
+            if col in row:
+                unique_value = row[col]
+                for existing_row in self.tables[table_name]:
+                    if existing_row.get(col) == unique_value:
+                        raise ValueError(f"UNIQUE constraint violated: {col}={unique_value} already exists")
+        
+        self.tables[table_name].append(row)
+        
+        # Update indexes
+        if primary_key and primary_key in row:
+            self.indexes[table_name][primary_key][row[primary_key]] = len(self.tables[table_name]) - 1
+        for col in unique_cols:
+            if col in row:
+                self.indexes[table_name][col][row[col]] = len(self.tables[table_name]) - 1
+        
+        self.save_to_file()
+    
     def execute(self, sql: str) -> List[Dict[str, Any]]:
         """Execute SQL statement"""
         sql = sql.strip()
@@ -371,7 +440,7 @@ class MicroSQL:
         # Simple evaluation (handle basic comparisons)
         for op in ['=', '!=', '<', '>', '<=', '>=']:
             if op in where_clause:
-                parts = where_clause.split(op)
+                parts = where_clause.split(op, 1)  # Split only on first occurrence
                 if len(parts) == 2:
                     left = parts[0].strip()
                     right = parts[1].strip()
@@ -383,20 +452,42 @@ class MicroSQL:
                     right_val = right
                     if right_val.startswith("'") and right_val.endswith("'"):
                         right_val = right_val[1:-1]
+                    else:
+                        # Try to convert to int if it's a number
+                        try:
+                            right_val = int(right_val)
+                        except:
+                            pass
+                    
+                    # Ensure both values are comparable type
+                    if isinstance(left_val, int) and isinstance(right_val, str):
+                        try:
+                            right_val = int(right_val)
+                        except:
+                            left_val = str(left_val)
+                    elif isinstance(left_val, str) and isinstance(right_val, int):
+                        try:
+                            left_val = int(left_val)
+                        except:
+                            right_val = str(right_val)
                     
                     # Compare
-                    if op == '=':
-                        return left_val == right_val
-                    elif op == '!=':
-                        return left_val != right_val
-                    elif op == '<':
-                        return left_val < right_val
-                    elif op == '>':
-                        return left_val > right_val
-                    elif op == '<=':
-                        return left_val <= right_val
-                    elif op == '>=':
-                        return left_val >= right_val
+                    try:
+                        if op == '=':
+                            return left_val == right_val
+                        elif op == '!=':
+                            return left_val != right_val
+                        elif op == '<':
+                            return left_val < right_val
+                        elif op == '>':
+                            return left_val > right_val
+                        elif op == '<=':
+                            return left_val <= right_val
+                        elif op == '>=':
+                            return left_val >= right_val
+                    except TypeError:
+                        # If comparison fails, return False
+                        return False
         
         return True
     
@@ -429,17 +520,35 @@ class MicroSQL:
         set_end = where_pos if where_pos != -1 else len(sql)
         set_clause = sql[set_pos+3:set_end].strip()
         
-        # Parse updates
+        # Parse updates with proper type conversion
+        schema = self.schemas.get(table_name, {})
         updates = {}
         for assignment in set_clause.split(','):
-            col, val = assignment.split('=')
-            col = col.strip()
-            val = val.strip()
-            
-            if val.startswith("'") and val.endswith("'"):
-                val = val[1:-1]
-            
-            updates[col] = val
+            parts = assignment.split('=', 1)
+            if len(parts) == 2:
+                col = parts[0].strip()
+                val = parts[1].strip()
+                
+                # Remove quotes if present
+                if val.startswith("'") and val.endswith("'"):
+                    val = val[1:-1]
+                
+                # Convert value based on schema type
+                if col in schema:
+                    col_type = schema[col].upper()
+                    if 'INT' in col_type:
+                        try:
+                            val = int(val) if val != 'NULL' else None
+                        except:
+                            pass
+                    elif val.upper() == 'TRUE':
+                        val = True
+                    elif val.upper() == 'FALSE':
+                        val = False
+                    elif val.upper() == 'NULL':
+                        val = None
+                
+                updates[col] = val
         
         # Apply WHERE clause and update
         if where_pos != -1:
