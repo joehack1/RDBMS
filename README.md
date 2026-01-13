@@ -2,15 +2,21 @@
 
 ## Overview
 
-MicroSQL is a lightweight, file-based relational database management system built with Python. This project demonstrates a simple RDBMS implementation with a web interface for managing users and posts.
+MicroSQL is a lightweight, file-based relational database management system built with Python. This project demonstrates a complete RDBMS implementation with a web interface for managing data and an interactive REPL for direct SQL queries.
 
 ## Features
 
-- **Simple SQL Support**: Execute basic SQL queries (CREATE TABLE, INSERT, SELECT, UPDATE, DELETE)
+- **Complete SQL Support**: CREATE TABLE, INSERT, SELECT, UPDATE, DELETE
+- **Constraint Enforcement**: PRIMARY KEY and UNIQUE constraints with validation
+- **JOIN Operations**: INNER JOIN and LEFT JOIN support
+- **Basic Indexing**: Automatic indexes on PRIMARY KEY and UNIQUE columns for faster lookups
+- **Data Types**: INT, VARCHAR, BOOL, DATETIME, TEXT
+- **WHERE Clauses**: Filter results with conditions
+- **ORDER BY**: Sort results in ascending or descending order
+- **LIMIT**: Limit result sets
 - **File Persistence**: Database automatically saves to JSON file
-- **Web Interface**: Flask-based web app for managing data
-- **Tables**: Pre-configured with users, posts, and comments tables
-- **CRUD Operations**: Create, read, update, and delete users and posts through the web interface
+- **Web Interface**: Flask-based web app for CRUD operations
+- **Interactive REPL**: Command-line interface for direct database queries
 
 ## Project Structure
 
@@ -56,23 +62,27 @@ RDBMS/
 
 ## Running the Application
 
-1. **Start the Flask web server**:
-   ```bash
-   python microsql.py
-   ```
+### 1. Web Interface (Flask)
 
-2. **Open your browser** and navigate to:
-   ```
-   http://localhost:5000
-   ```
+```bash
+python microsql.py
+```
 
-3. **Access the features**:
-   - **Home Page**: View all users at `/`
-   - **Create User**: Add new users at `/users/create`
-   - **Edit User**: Update user information at `/users/<id>/edit`
-   - **Delete User**: Remove users (button on home page)
-   - **View Posts**: See all posts at `/posts`
-   - **API Endpoint**: Get users as JSON at `/users`
+Then open your browser and navigate to `http://localhost:5000`
+
+### 2. Interactive REPL Mode
+
+```bash
+python repl.py
+# or
+python microsql.py repl
+```
+
+This launches an interactive command-line interface where you can:
+- Execute SQL queries directly
+- View table schemas
+- List all tables
+- Get help with `.help` command
 
 ## Database Schema
 
@@ -111,46 +121,111 @@ CREATE TABLE comments (
 )
 ```
 
-## Executing Custom Queries
+## SQL Examples
 
-You can execute custom SQL queries through the `/api/query` endpoint:
-
-```bash
-curl -X POST http://localhost:5000/api/query \
-  -H "Content-Type: application/json" \
-  -d '{"sql": "SELECT * FROM users WHERE age > 25"}'
+### Create Table with Constraints
+```sql
+CREATE TABLE employees (
+    id INT PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    salary INT,
+    department VARCHAR(50)
+)
 ```
 
-## Sample Data
+### Insert Data
+```sql
+INSERT INTO employees (id, name, email, salary, department) 
+VALUES (1, 'Alice', 'alice@example.com', 50000, 'Engineering')
+```
 
-The application automatically creates sample data on first run:
+### Select with WHERE
+```sql
+SELECT * FROM employees WHERE salary > 45000
+```
 
-**Users:**
-- alice (25 years old, active)
-- bob (30 years old, active)
-- charlie (22 years old, inactive)
+### Select with ORDER BY
+```sql
+SELECT * FROM employees ORDER BY salary DESC
+```
 
-**Posts:**
-- "First Post" by alice
-- "Second Post" by bob
-- "Third Post" by alice
+### Select with LIMIT
+```sql
+SELECT * FROM employees LIMIT 10
+```
 
-## Limitations
+### JOIN Operations
+```sql
+-- INNER JOIN
+SELECT users.username, posts.title 
+FROM users 
+JOIN posts ON users.id = posts.user_id
 
-- Simple in-memory database with file persistence
-- No advanced features like transactions or complex joins
-- Basic SQL parsing and evaluation
-- Single-threaded implementation
+-- LEFT JOIN
+SELECT users.username, posts.title 
+FROM users 
+LEFT JOIN posts ON users.id = posts.user_id
+```
 
-## Development
+### Update Data
+```sql
+UPDATE employees SET salary = 55000 WHERE name = 'Alice'
+```
 
-The application runs in debug mode by default, which means:
-- Auto-reload on code changes
-- Debugger PIN available for remote debugging
-- Stack traces on errors
+### Delete Data
+```sql
+DELETE FROM employees WHERE id = 1
+```
 
-For production use, replace the development server with a proper WSGI server like Gunicorn.
+## REPL Commands
 
-## License
+In interactive REPL mode, use special commands prefixed with `.`:
 
-This is a demonstration project for learning RDBMS concepts.
+- `.help` - Show help message
+- `.tables` - List all tables
+- `.schema <table_name>` - Show table schema
+- `.clear` - Clear screen
+- `.exit` - Exit REPL
+
+## Features Details
+
+### PRIMARY KEY Constraint
+- Enforces uniqueness on the specified column
+- Prevents duplicate key values
+- Automatically indexed for fast lookups
+
+```sql
+CREATE TABLE users (
+    id INT PRIMARY KEY,
+    username VARCHAR(50)
+)
+```
+
+### UNIQUE Constraint
+- Ensures all values in the column are unique
+- Multiple UNIQUE columns can exist per table
+- Automatically indexed
+
+```sql
+CREATE TABLE users (
+    id INT PRIMARY KEY,
+    email VARCHAR(100) UNIQUE,
+    username VARCHAR(50) UNIQUE
+)
+```
+
+### Indexing
+- Automatic indexes created for PRIMARY KEY and UNIQUE columns
+- Faster lookups and constraint validation
+- No manual index management required
+
+### JOIN Support
+- INNER JOIN: Returns only matching rows from both tables
+- LEFT JOIN: Returns all rows from left table, matching rows from right table
+- Requires explicit ON condition with column references
+
+```sql
+SELECT t1.col1, t2.col2 FROM table1 
+JOIN table2 ON table1.id = table2.table1_id
+```

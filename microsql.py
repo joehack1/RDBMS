@@ -184,9 +184,17 @@ def execute_query():
             return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    print("Starting MicroSQL Web Application...")
-    print("1. Web app available at: http://localhost:5000")
-    print("2. For REPL mode, run: python microsql.py")
+    import sys
     
-    # Start Flask app
-    app.run(debug=True, port=5000)
+    # Check if REPL mode is requested
+    if len(sys.argv) > 1 and sys.argv[1] == 'repl':
+        from repl import MicroSQLREPL
+        repl = MicroSQLREPL('webapp')
+        repl.run()
+    else:
+        print("Starting MicroSQL Web Application...")
+        print("1. Web app available at: http://localhost:5000")
+        print("2. For REPL mode, run: python microsql.py repl")
+        
+        # Start Flask app
+        app.run(debug=True, port=5000)

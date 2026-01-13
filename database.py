@@ -15,6 +15,9 @@ class MicroSQL:
         self.db_file = f"{db_name}.json"
         self.tables: Dict[str, List[Dict[str, Any]]] = {}
         self.schemas: Dict[str, Dict[str, str]] = {}
+        self.primary_keys: Dict[str, str] = {}  # table_name -> column_name
+        self.unique_columns: Dict[str, List[str]] = {}  # table_name -> [column_names]
+        self.indexes: Dict[str, Dict[str, Dict]] = {}  # table_name -> column -> {value: [row_indices]}
         self.load_from_file()
     
     def load_from_file(self):
@@ -25,6 +28,8 @@ class MicroSQL:
                     data = json.load(f)
                     self.tables = data.get('tables', {})
                     self.schemas = data.get('schemas', {})
+                    self.primary_keys = data.get('primary_keys', {})
+                    self.unique_columns = data.get('unique_columns', {})
             except:
                 pass
     
@@ -33,7 +38,9 @@ class MicroSQL:
         with open(self.db_file, 'w') as f:
             json.dump({
                 'tables': self.tables,
-                'schemas': self.schemas
+                'schemas': self.schemas,
+                'primary_keys': self.primary_keys,
+                'unique_columns': self.unique_columns
             }, f, indent=2, default=str)
     
     def execute(self, sql: str) -> List[Dict[str, Any]]:
@@ -65,27 +72,67 @@ class MicroSQL:
         columns_str = sql[sql.find('(')+1:sql.rfind(')')].strip()
         
         schema = {}
+        primary_key = None
+        unique_columns = []
+        
         for col_def in columns_str.split(','):
             col_def = col_def.strip()
-            if 'FOREIGN KEY' in col_def.upper() or 'PRIMARY KEY' in col_def.upper():
+            
+            # Check for PRIMARY KEY
+            if 'PRIMARY KEY' in col_def.upper():
+                if '(' in col_def:
+                    pk_col = col_def.split('(')[1].split(')')[0].strip()
+                    primary_key = pk_col
                 continue
             
+            # Check for UNIQUE
+            if 'UNIQUE' in col_def.upper():
+                if 'FOREIGN' not in col_def.upper():
+                    parts = col_def.split()
+                    unique_columns.append(parts[0])
+                    col_def = col_def.replace('UNIQUE', '').strip()
+            
+            # Skip FOREIGN KEY
+            if 'FOREIGN KEY' in col_def.upper():
+                continue
+            
+            # Parse column name and type
             parts = col_def.split()
-            col_name = parts[0]
-            col_type = parts[1] if len(parts) > 1 else 'VARCHAR'
-            schema[col_name] = col_type
+            if parts:
+                col_name = parts[0]
+                col_type = parts[1] if len(parts) > 1 else 'VARCHAR'
+                
+                # Check for PRIMARY KEY inline
+                if 'PRIMARY' in col_def.upper():
+                    primary_key = col_name
+                
+                # Check for UNIQUE inline
+                if 'UNIQUE' in col_def.upper():
+                    unique_columns.append(col_name)
+                
+                schema[col_name] = col_type
         
-        return table_name, schema
+        return table_name, schema, primary_key, unique_columns
     
     def _create_table(self, sql: str) -> List:
         """Create a new table"""
-        table_name, schema = self._parse_create_table(sql)
+        table_name, schema, primary_key, unique_columns = self._parse_create_table(sql)
         
         if table_name in self.tables:
             raise ValueError(f"Table {table_name} already exists")
         
         self.tables[table_name] = []
         self.schemas[table_name] = schema
+        self.primary_keys[table_name] = primary_key
+        self.unique_columns[table_name] = unique_columns
+        self.indexes[table_name] = {}
+        
+        # Create indexes for primary and unique columns
+        if primary_key:
+            self.indexes[table_name][primary_key] = {}
+        for col in unique_columns:
+            self.indexes[table_name][col] = {}
+        
         self.save_to_file()
         
         return []
@@ -146,7 +193,32 @@ class MicroSQL:
             for col, val in zip(schema.keys(), values):
                 row[col] = self._convert_value(val, col, schema)
         
+        # Validate PRIMARY KEY constraint
+        primary_key = self.primary_keys.get(table_name)
+        if primary_key and primary_key in row:
+            pk_value = row[primary_key]
+            for existing_row in self.tables[table_name]:
+                if existing_row.get(primary_key) == pk_value:
+                    raise ValueError(f"PRIMARY KEY constraint violated: {primary_key}={pk_value} already exists")
+        
+        # Validate UNIQUE constraints
+        unique_cols = self.unique_columns.get(table_name, [])
+        for col in unique_cols:
+            if col in row:
+                unique_value = row[col]
+                for existing_row in self.tables[table_name]:
+                    if existing_row.get(col) == unique_value:
+                        raise ValueError(f"UNIQUE constraint violated: {col}={unique_value} already exists")
+        
         self.tables[table_name].append(row)
+        
+        # Update indexes
+        if primary_key and primary_key in row:
+            self.indexes[table_name][primary_key][row[primary_key]] = len(self.tables[table_name]) - 1
+        for col in unique_cols:
+            if col in row:
+                self.indexes[table_name][col][row[col]] = len(self.tables[table_name]) - 1
+        
         self.save_to_file()
         
         return []
@@ -178,11 +250,14 @@ class MicroSQL:
             return val
     
     def _select(self, sql: str) -> List[Dict]:
-        """Select rows from table"""
-        # Parse SELECT statement (simple implementation)
+        """Select rows from table with JOIN support"""
         sql_upper = sql.upper()
         
-        # Extract FROM clause
+        # Check for JOIN
+        if 'JOIN' in sql_upper:
+            return self._select_with_join(sql)
+        
+        # Simple SELECT without JOIN
         from_pos = sql_upper.find('FROM')
         where_pos = sql_upper.find('WHERE')
         order_pos = sql_upper.find('ORDER BY')
@@ -220,6 +295,68 @@ class MicroSQL:
             rows = rows[:limit_num]
         
         return rows
+    
+    def _select_with_join(self, sql: str) -> List[Dict]:
+        """Select rows with JOIN"""
+        sql_upper = sql.upper()
+        
+        # Extract main table
+        from_pos = sql_upper.find('FROM')
+        join_pos = sql_upper.find('JOIN')
+        where_pos = sql_upper.find('WHERE')
+        
+        main_table = sql[from_pos+5:join_pos].strip()
+        
+        # Extract JOIN type and table
+        join_end = where_pos if where_pos != -1 else len(sql)
+        join_clause = sql[join_pos:join_end].strip()
+        
+        # Determine join type
+        join_type = 'INNER'
+        if 'LEFT' in join_clause.upper():
+            join_type = 'LEFT'
+        elif 'INNER' in join_clause.upper():
+            join_type = 'INNER'
+        
+        # Extract joined table and ON condition
+        on_pos = join_clause.upper().find('ON')
+        join_table = join_clause[:on_pos].replace('JOIN', '').replace('LEFT', '').replace('INNER', '').strip()
+        on_condition = join_clause[on_pos+2:].strip()
+        
+        # Get rows from main table
+        main_rows = [row.copy() for row in self.tables[main_table]]
+        join_rows = [row.copy() for row in self.tables[join_table]]
+        
+        # Parse ON condition (e.g., "users.id = posts.user_id")
+        if '=' in on_condition:
+            left_col, right_col = on_condition.split('=')
+            left_table, left_field = left_col.strip().split('.')
+            right_table, right_field = right_col.strip().split('.')
+            
+            # Perform join
+            result = []
+            for main_row in main_rows:
+                for join_row in join_rows:
+                    if main_row.get(left_field) == join_row.get(right_field):
+                        # Merge rows with table prefix
+                        merged = {}
+                        for k, v in main_row.items():
+                            merged[f"{main_table}.{k}"] = v
+                        for k, v in join_row.items():
+                            merged[f"{join_table}.{k}"] = v
+                        result.append(merged)
+                    elif join_type == 'LEFT' and not any(main_row.get(left_field) == jr.get(right_field) for jr in join_rows):
+                        # LEFT JOIN: include unmatched rows from left table
+                        merged = {}
+                        for k, v in main_row.items():
+                            merged[f"{main_table}.{k}"] = v
+                        for k in self.schemas[join_table]:
+                            merged[f"{join_table}.{k}"] = None
+                        result.append(merged)
+            
+            return result
+        
+        raise ValueError("Invalid JOIN syntax")
     
     def _apply_where(self, rows: List[Dict], where_clause: str) -> List[Dict]:
         """Filter rows based on WHERE clause"""
