@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Posts</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .post { border: 1px solid #ddd; padding: 20px; margin: 20px 0; }
+        .post-title { font-size: 24px; color: #333; }
+        .post-author { color: #666; font-style: italic; }
+        .post-content { margin: 10px 0; }
+        .post-date { color: #999; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>Posts</h1>
+    <a href="/" class="btn">Back to Users</a>
+    
+    {% for post in posts %}
+    <div class="post">
+        <div class="post-title">{{ post.title }}</div>
+        <div class="post-author">By {{ post.author.username }}</div>
+        <div class="post-content">{{ post.content }}</div>
+        <div class="post-date">{{ post.created_at }}</div>
+    </div>
+    {% endfor %}
+</body>
+</html>
