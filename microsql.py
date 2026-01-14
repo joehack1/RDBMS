@@ -2,10 +2,16 @@
 Simple Web Application using MicroSQL RDBMS
 """
 from flask import Flask, render_template, request, redirect, jsonify
+from werkzeug.routing import BaseConverter
 import json
+
+# Custom URL converter that matches numeric strings with leading zeros
+class UserIDConverter(BaseConverter):
+    regex = r'\d+'
 
 # Create Flask app
 app = Flask(__name__, static_folder='static', static_url_path='/static')
+app.url_map.converters['user_id'] = UserIDConverter
 
 # Initialize MicroSQL database
 from database import MicroSQL
@@ -60,11 +66,16 @@ if len(db.execute("SELECT * FROM users")) == 0:
     db.insert_row('users', {'id': '001', 'username': 'alice', 'email': 'alice@example.com', 'age': 25, 'is_active': True, 'created_at': '2024-01-01 10:00:00'})
     db.insert_row('users', {'id': '002', 'username': 'bob', 'email': 'bob@example.com', 'age': 30, 'is_active': True, 'created_at': '2024-01-02 11:00:00'})
     db.insert_row('users', {'id': '003', 'username': 'charlie', 'email': 'charlie@example.com', 'age': 22, 'is_active': False, 'created_at': '2024-01-03 12:00:00'})
+    db.insert_row('users', {'id': '004', 'username': 'diana', 'email': 'diana@example.com', 'age': 28, 'is_active': True, 'created_at': '2024-01-04 13:00:00'})
+    db.insert_row('users', {'id': '005', 'username': 'evan', 'email': 'evan@example.com', 'age': 35, 'is_active': True, 'created_at': '2024-01-05 14:00:00'})
 
 if len(db.execute("SELECT * FROM posts")) == 0:
-    db.insert_row('posts', {'id': '001', 'user_id': '001', 'title': 'First Post', 'content': 'Hello World!', 'created_at': '2024-01-04 09:00:00'})
-    db.insert_row('posts', {'id': '002', 'user_id': '002', 'title': 'Second Post', 'content': 'Another day in paradise', 'created_at': '2024-01-05 10:00:00'})
-    db.insert_row('posts', {'id': '003', 'user_id': '001', 'title': 'Third Post', 'content': 'Learning MicroSQL', 'created_at': '2024-01-06 11:00:00'})
+    db.insert_row('posts', {'id': '001', 'user_id': '001', 'title': 'First Post', 'content': 'Hello World! Welcome to my blog. I am excited to share my thoughts and experiences here.', 'created_at': '2024-01-04 09:00:00'})
+    db.insert_row('posts', {'id': '002', 'user_id': '002', 'title': 'Second Post', 'content': 'Another day in paradise. Today was a great day with lots of learning opportunities.', 'created_at': '2024-01-05 10:00:00'})
+    db.insert_row('posts', {'id': '003', 'user_id': '001', 'title': 'Third Post', 'content': 'Learning MicroSQL has been an amazing journey. The database system is powerful and flexible.', 'created_at': '2024-01-06 11:00:00'})
+    db.insert_row('posts', {'id': '004', 'user_id': '003', 'title': 'My First Post', 'content': 'This is my first blog post. I am looking forward to sharing more content soon.', 'created_at': '2024-01-07 09:30:00'})
+    db.insert_row('posts', {'id': '005', 'user_id': '004', 'title': 'Tech Talk', 'content': 'Technology is evolving rapidly. Stay tuned for more insights and discussions.', 'created_at': '2024-01-08 10:15:00'})
+    db.insert_row('posts', {'id': '006', 'user_id': '005', 'title': 'Journey Begins', 'content': 'Starting my journey with database systems. Excited to learn and grow.', 'created_at': '2024-01-09 11:45:00'})
 
 @app.route('/')
 def index():
@@ -152,9 +163,12 @@ def create_user():
     
     return render_template('create_user.html', next_id=next_id)
 
-@app.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
+@app.route('/users/<user_id:user_id>/edit', methods=['GET', 'POST'])
 def edit_user(user_id):
     """Edit an existing user"""
+    # Convert to string with leading zeros
+    user_id = f"{int(user_id):03d}"
+    
     if request.method == 'POST':
         try:
             username = request.form['username']
@@ -165,39 +179,43 @@ def edit_user(user_id):
             # Parse age as integer or None
             age = int(age_input) if age_input else None
             
-            # Build data dictionary with proper types
-            user_data = {
-                'username': username,
-                'email': email,
-                'age': age,
-                'is_active': is_active
-            }
+            # Get current user data
+            users = db.execute(f"SELECT * FROM users WHERE id = '{user_id}'")
+            if not users:
+                return "User not found", 404
             
-            # Update using direct method to avoid SQL concatenation issues
-            users = db.execute(f"SELECT * FROM users WHERE id = {user_id}")
-            if users:
-                updated_user = users[0].copy()
-                updated_user.update(user_data)
-                # Remove old row and insert updated version
-                db.execute(f"DELETE FROM users WHERE id = {user_id}")
-                db.insert_row('users', updated_user)
+            current_user = users[0]
+            
+            # Update the user data while preserving ID and created_at
+            updated_user = dict(current_user)  # Create a copy
+            updated_user['username'] = username
+            updated_user['email'] = email
+            updated_user['age'] = age
+            updated_user['is_active'] = is_active
+            
+            # Delete old record and insert updated version
+            db.execute(f"DELETE FROM users WHERE id = '{user_id}'")
+            db.insert_row('users', updated_user)
             
             return redirect('/')
         except Exception as e:
             return f"Error updating user: {e}", 400
     
     # GET request - show edit form
-    users = db.execute(f"SELECT * FROM users WHERE id = {user_id}")
+    users = db.execute(f"SELECT * FROM users WHERE id = '{user_id}'")
     if not users:
         return "User not found", 404
     
     return render_template('edit_user.html', user=users[0])
 
-@app.route('/users/<int:user_id>/delete', methods=['POST'])
+@app.route('/users/<user_id:user_id>/delete', methods=['POST'])
 def delete_user(user_id):
     """Delete a user"""
+    # Convert to string with leading zeros
+    user_id = f"{int(user_id):03d}"
+    
     try:
-        db.execute(f"DELETE FROM users WHERE id = {user_id}")
+        db.execute(f"DELETE FROM users WHERE id = '{user_id}'")
         return redirect('/')
     except Exception as e:
         return f"Error deleting user: {e}", 400
