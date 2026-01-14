@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Posts</title>
+    <title>Posts - MicroSQL Database</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -40,7 +40,7 @@
             position: relative;
             z-index: 1;
             padding: 40px;
-            max-width: 1000px;
+            max-width: 1300px;
             margin: 0 auto;
         }
         .header-section {
@@ -50,6 +50,11 @@
             margin-bottom: 30px;
             flex-wrap: wrap;
             gap: 15px;
+        }
+        .btn-group { 
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         h2 {
             color: #fff;
@@ -106,125 +111,243 @@
           position: relative; 
           z-index: 6; 
         }
-        .btn { 
-            padding: 10px 18px; 
-            text-decoration: none; 
-            background: linear-gradient(135deg, #707070 0%, #606060 100%);
+        .table-wrapper {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+        }
+        th { 
+            background: linear-gradient(135deg, #656565 0%, #505050 100%);
             color: white; 
-            border-radius: 6px; 
-            display: inline-block;
-            border: none;
-            cursor: pointer;
+            padding: 16px;
+            text-align: left;
             font-weight: 600;
             font-size: 14px;
+            letter-spacing: 0.5px;
+            border-bottom: 3px solid #404040;
+        }
+        td { 
+            padding: 14px 16px; 
+            border-bottom: 1px solid #e0e0e0;
+            color: #fff;
+        }
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: background-color 0.2s;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .btn { 
+            padding: 9px 16px; 
+            margin: 3px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            border: none; 
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
             transition: all 0.3s ease;
+            display: inline-block;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #707070 0%, #606060 100%);
+            color: white;
             box-shadow: 0 4px 12px rgba(112, 112, 112, 0.3);
         }
-        .btn:hover { 
+        .btn-primary:hover { 
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(112, 112, 112, 0.4);
             background: linear-gradient(135deg, #808080 0%, #707070 100%);
         }
-        .posts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
-            margin-top: 30px;
+        .btn-secondary {
+            background: linear-gradient(135deg, #909090 0%, #808080 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(144, 144, 144, 0.3);
         }
-        .post { 
-            border-radius: 10px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            border-left: 5px solid #707070;
+        .btn-secondary:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(144, 144, 144, 0.4);
+            background: linear-gradient(135deg, #a0a0a0 0%, #909090 100%);
         }
-        .post:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-        }
-        .post-header {
-            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-            padding: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        .post-title { 
-            font-size: 20px; 
-            color: #333; 
-            margin-bottom: 8px;
-            font-weight: 700;
-            line-height: 1.3;
-        }
-        .post-author { 
-            color: #666; 
-            font-style: italic; 
-            font-size: 13px;
-            font-weight: 500;
-        }
-        .post-content { 
-            padding: 20px;
-            color: #555; 
-            line-height: 1.6;
-            font-size: 14px;
-            min-height: 60px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .post-date { 
-            color: #999; 
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 12px;
-            padding: 15px 20px;
-            background-color: #fafafa;
+            font-weight: 600;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 9px 16px 9px 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: #707070;
+            box-shadow: 0 0 0 3px rgba(112, 112, 112, 0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 14px;
+        }
+        .sort-select {
+            padding: 9px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.95);
+            cursor: pointer;
+            color: #333;
             font-weight: 500;
-            letter-spacing: 0.3px;
+        }
+        .sort-select:focus {
+            outline: none;
+            border-color: #707070;
+            box-shadow: 0 0 0 3px rgba(112, 112, 112, 0.1);
+        }
+        .empty-row {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
         }
         @media (max-width: 768px) {
             .container { padding: 20px; }
             .header-section { flex-direction: column; align-items: flex-start; }
-            .posts-grid { 
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
+            .btn-group { width: 100%; }
+            table { font-size: 13px; }
+            th, td { padding: 10px; }
+            .controls { flex-direction: column; }
+            .search-box { width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1>   MicroSQL Database</h1>
+        <h1>📊 MicroSQL Database</h1>
     </div>
     <div class="container">
         <div class="header-section">
-            <h2>Recent Posts</h2>
-            <a href="/" class="btn">← Back to Users</a>
+            <h2>Posts</h2>
+            <div class="btn-group">
+                <a href="/" class="btn btn-primary">👥 Back to Users</a>
+            </div>
         </div>
         
-        <div class="posts-grid">
-            {% if posts %}
-                {% for post in posts %}
-                <div class="post glass3d">
-                    <div class="post-header">
-                        <div class="post-title">{{ post.title }}</div>
-                        <div class="post-author">By {{ post.author.username }}</div>
-                    </div>
-                    <div class="post-content">{{ post.content }}</div>
-                    <div class="post-date">📅 {{ post.created_at }}</div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #ccc; font-size: 16px;">
-                    No posts yet.
-                </div>
-            {% endif %}
+        {% if posts %}
+        <div class="controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search posts by title or author...">
+            </div>
+            <select class="sort-select" id="sortSelect">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="title-asc">Title: A-Z</option>
+                <option value="title-desc">Title: Z-A</option>
+            </select>
         </div>
-    </div>
-</body>
-</html>
+        {% endif %}
         
-        {% for post in posts %}
-        <div class="post">
-            <div class="post-title">{{ post.title }}</div>
-            <div class="post-author">By {{ post.author.username }}</div>
-            <div class="post-content">{{ post.content }}</div>
-            <div class="post-date">{{ post.created_at }}</div>
+        <div class="table-wrapper glass3d">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Content Preview</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if posts %}
+                        {% for post in posts %}
+                        <tr class="post-row" data-title="{{ post.title|lower }}" data-author="{{ post.author.username|lower }}" data-content="{{ post.content|lower }}" data-date="{{ post.created_at }}">
+                            <td><strong>{{ post.id }}</strong></td>
+                            <td>{{ post.title }}</td>
+                            <td>{{ post.author.username }}</td>
+                            <td>{{ post.content[:60] }}{% if post.content|length > 60 %}...{% endif %}</td>
+                            <td>{{ post.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="empty-row">📝 No posts yet</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
-        {% endfor %}
     </div>
+    
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const sortSelect = document.getElementById('sortSelect');
+        const postRows = document.querySelectorAll('.post-row');
+        
+        function filterAndSort() {
+            const searchTerm = searchInput?.value.toLowerCase() || '';
+            const sortValue = sortSelect?.value || 'newest';
+            
+            let visibleRows = [];
+            
+            // Filter
+            postRows.forEach(row => {
+                const title = row.dataset.title;
+                const author = row.dataset.author;
+                const matches = title.includes(searchTerm) || author.includes(searchTerm);
+                row.style.display = matches ? '' : 'none';
+                if (matches) visibleRows.push(row);
+            });
+            
+            // Sort visible rows
+            visibleRows.sort((a, b) => {
+                switch(sortValue) {
+                    case 'oldest':
+                        return new Date(a.dataset.date) - new Date(b.dataset.date);
+                    case 'title-asc':
+                        return a.dataset.title.localeCompare(b.dataset.title);
+                    case 'title-desc':
+                        return b.dataset.title.localeCompare(a.dataset.title);
+                    case 'newest':
+                    default:
+                        return new Date(b.dataset.date) - new Date(a.dataset.date);
+                }
+            });
+            
+            // Reorder DOM
+            const tbody = document.querySelector('tbody');
+            visibleRows.forEach(row => {
+                tbody.appendChild(row);
+            });
+        }
+        
+        searchInput?.addEventListener('input', filterAndSort);
+        sortSelect?.addEventListener('change', filterAndSort);
+    </script>
 </body>
 </html>

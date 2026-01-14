@@ -235,7 +235,7 @@
                 <tbody>
                     {% for user in users %}
                     <tr>
-                        <td><strong>#{{ user.id }}</strong></td>
+                        <td><strong>{{ user.id }}</strong></td>
                         <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.age if user.age else '-' }}</td>

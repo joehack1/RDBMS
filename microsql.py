@@ -99,7 +99,17 @@ def create_user():
             
             # Find next available ID
             users = db.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
-            next_id_num = int(users[0]['id']) + 1 if users else 1
+            if users and len(users) > 0:
+                last_user = users[0]
+                # Handle both dictionary and object-like access
+                last_id = last_user.get('id') if isinstance(last_user, dict) else getattr(last_user, 'id', None)
+                if last_id:
+                    next_id_num = int(str(last_id).lstrip('0') or '0') + 1
+                else:
+                    next_id_num = 1
+            else:
+                next_id_num = 1
+            
             next_id = f"{next_id_num:03d}"  # Format as zero-padded 3-digit (001, 002, etc.)
             
             # Parse age as integer or None
@@ -122,7 +132,25 @@ def create_user():
         except Exception as e:
             return f"Error creating user: {e}", 400
     
-    return render_template('create_user.html')
+    # Calculate next ID for display
+    try:
+        users = db.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
+        if users and len(users) > 0:
+            last_user = users[0]
+            # Handle both dictionary and object-like access
+            last_id = last_user.get('id') if isinstance(last_user, dict) else getattr(last_user, 'id', None)
+            if last_id:
+                next_id_num = int(str(last_id).lstrip('0') or '0') + 1
+            else:
+                next_id_num = 1
+        else:
+            next_id_num = 1
+    except Exception:
+        next_id_num = 1
+    
+    next_id = f"{next_id_num:03d}"
+    
+    return render_template('create_user.html', next_id=next_id)
 
 @app.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
 def edit_user(user_id):
