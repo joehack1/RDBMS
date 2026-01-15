@@ -235,19 +235,19 @@
                 <tbody>
                     {% for user in users %}
                     <tr>
-                        <td><strong>{{ user.id }}</strong></td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.age if user.age else '-' }}</td>
+                        <td><strong>{{ "%03d"|format(user['id']) }}</strong></td>
+                        <td>{{ user['username'] }}</td>
+                        <td>{{ user['email'] }}</td>
+                        <td>{{ user['age'] if user['age'] else '-' }}</td>
                         <td>
-                            <span class="status {% if user.is_active %}active{% else %}inactive{% endif %}">
-                                {{ 'Active' if user.is_active else 'Inactive' }}
+                            <span class="status {% if user['is_active'] %}active{% else %}inactive{% endif %}">
+                                {{ 'Active' if user['is_active'] else 'Inactive' }}
                             </span>
                         </td>
-                        <td>{{ user.created_at }}</td>
+                        <td>{{ user['created_at'] }}</td>
                         <td>
-                            <a href="/users/{{ user.id }}/edit" class="btn btn-edit">✎ Edit</a>
-                            <form action="/users/{{ user.id }}/delete" method="POST" style="display: inline;">
+                            <a href="/users/{{ user['id'] }}/edit" class="btn btn-edit">✎ Edit</a>
+                            <form action="/users/{{ user['id'] }}/delete" method="POST" style="display: inline;">
                                 <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">✕ Delete</button>
                             </form>
                         </td>

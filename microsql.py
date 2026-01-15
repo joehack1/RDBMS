@@ -5,13 +5,8 @@ from flask import Flask, render_template, request, redirect, jsonify
 from werkzeug.routing import BaseConverter
 import json
 
-# Custom URL converter that matches numeric strings with leading zeros
-class UserIDConverter(BaseConverter):
-    regex = r'\d+'
-
 # Create Flask app
 app = Flask(__name__, static_folder='static', static_url_path='/static')
-app.url_map.converters['user_id'] = UserIDConverter
 
 # Initialize MicroSQL database
 from database import MicroSQL
@@ -163,59 +158,53 @@ def create_user():
     
     return render_template('create_user.html', next_id=next_id)
 
-@app.route('/users/<user_id:user_id>/edit', methods=['GET', 'POST'])
+@app.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
 def edit_user(user_id):
     """Edit an existing user"""
-    # Convert to string with leading zeros
-    user_id = f"{int(user_id):03d}"
-    
     if request.method == 'POST':
         try:
             username = request.form['username']
             email = request.form['email']
             age_input = request.form.get('age', '').strip()
             is_active = 'is_active' in request.form
-            
+
             # Parse age as integer or None
             age = int(age_input) if age_input else None
-            
+
             # Get current user data
-            users = db.execute(f"SELECT * FROM users WHERE id = '{user_id}'")
+            users = db.execute(f"SELECT * FROM users WHERE id = {user_id}")
             if not users:
                 return "User not found", 404
-            
+
             current_user = users[0]
-            
+
             # Update the user data while preserving ID and created_at
             updated_user = dict(current_user)  # Create a copy
             updated_user['username'] = username
             updated_user['email'] = email
             updated_user['age'] = age
             updated_user['is_active'] = is_active
-            
+
             # Delete old record and insert updated version
-            db.execute(f"DELETE FROM users WHERE id = '{user_id}'")
+            db.execute(f"DELETE FROM users WHERE id = {user_id}")
             db.insert_row('users', updated_user)
-            
+
             return redirect('/')
         except Exception as e:
             return f"Error updating user: {e}", 400
-    
+
     # GET request - show edit form
-    users = db.execute(f"SELECT * FROM users WHERE id = '{user_id}'")
+    users = db.execute(f"SELECT * FROM users WHERE id = {user_id}")
     if not users:
         return "User not found", 404
-    
+
     return render_template('edit_user.html', user=users[0])
 
-@app.route('/users/<user_id:user_id>/delete', methods=['POST'])
+@app.route('/users/<int:user_id>/delete', methods=['POST'])
 def delete_user(user_id):
     """Delete a user"""
-    # Convert to string with leading zeros
-    user_id = f"{int(user_id):03d}"
-    
     try:
-        db.execute(f"DELETE FROM users WHERE id = '{user_id}'")
+        db.execute(f"DELETE FROM users WHERE id = {user_id}")
         return redirect('/')
     except Exception as e:
         return f"Error deleting user: {e}", 400

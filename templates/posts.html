@@ -286,12 +286,12 @@
                 <tbody>
                     {% if posts %}
                         {% for post in posts %}
-                        <tr class="post-row" data-title="{{ post.title|lower }}" data-author="{{ post.author.username|lower }}" data-content="{{ post.content|lower }}" data-date="{{ post.created_at }}">
-                            <td><strong>{{ post.id }}</strong></td>
-                            <td>{{ post.title }}</td>
-                            <td>{{ post.author.username }}</td>
-                            <td>{{ post.content[:60] }}{% if post.content|length > 60 %}...{% endif %}</td>
-                            <td>{{ post.created_at }}</td>
+                        <tr class="post-row" data-title="{{ post['title']|lower }}" data-author="{{ post['author']['username']|lower }}" data-content="{{ post['content']|lower }}" data-date="{{ post['created_at'] }}">
+                            <td><strong>{{ post['id'] }}</strong></td>
+                            <td>{{ post['title'] }}</td>
+                            <td>{{ post['author']['username'] }}</td>
+                            <td>{{ post['content'][:60] }}{% if post['content']|length > 60 %}...{% endif %}</td>
+                            <td>{{ post['created_at'] }}</td>
                         </tr>
                         {% endfor %}
                     {% else %}

@@ -206,22 +206,22 @@
             <form method="POST">
                 <div class="form-group">
                     <label>Username</label>
-                    <input type="text" name="username" value="{{ user.username }}" required>
+                    <input type="text" name="username" value="{{ user['username'] }}" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" name="email" value="{{ user.email }}" required>
+                    <input type="email" name="email" value="{{ user['email'] }}" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Age</label>
-                    <input type="number" name="age" value="{{ user.age if user.age else '' }}" max="130">
+                    <input type="number" name="age" value="{{ user['age'] if user['age'] else '' }}" max="130">
                 </div>
-                
+
                 <div class="form-group">
                     <div class="checkbox-group">
-                        <input type="checkbox" id="active" name="is_active" {% if user.is_active %}checked{% endif %}>
+                        <input type="checkbox" id="active" name="is_active" {% if user['is_active'] %}checked{% endif %}>
                         <label for="active">Mark as Active</label>
                     </div>
                 </div>
