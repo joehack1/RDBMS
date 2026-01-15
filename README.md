@@ -84,6 +84,17 @@ This launches an interactive command-line interface where you can:
 - List all tables
 - Get help with `.help` command
 
+## Screenshots
+
+### Home Page - Users Management
+![Home Page](home.png)
+
+### Create User Page
+![Create User](create.png)
+
+### Posts Page
+![Posts](post.png)
+
 ## Database Schema
 
 ### Users Table

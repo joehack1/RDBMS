@@ -301,11 +301,19 @@ class MicroSQL:
         
         self.tables[table_name].append(row)
         
-        # Update indexes
+        # Update indexes (safely initialize if needed)
+        if table_name not in self.indexes:
+            self.indexes[table_name] = {}
+        
         if primary_key and primary_key in row:
+            if primary_key not in self.indexes[table_name]:
+                self.indexes[table_name][primary_key] = {}
             self.indexes[table_name][primary_key][row[primary_key]] = len(self.tables[table_name]) - 1
+        
         for col in unique_cols:
             if col in row:
+                if col not in self.indexes[table_name]:
+                    self.indexes[table_name][col] = {}
                 self.indexes[table_name][col][row[col]] = len(self.tables[table_name]) - 1
         
         self.save_to_file()
